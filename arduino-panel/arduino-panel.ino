@@ -37,7 +37,11 @@ public:
 };
 
 void setup() {
-  
+  // Configurar modo de cada pin
+  pinMode(PIN_BATERIA, INPUT);
+  pinMode(PIN_SALIDA, OUTPUT);
+  pinMode(PIN_DISPLAY_SDA, OUTPUT);
+  pinMode(PIN_DISPLAY_SCL, OUTPUT);
 }
 
 void loop() {
