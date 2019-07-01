@@ -1,3 +1,6 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
 /**
  * Configuracion general del programa
  */
@@ -5,8 +8,6 @@
 // Pines
 constexpr int PIN_BATERIA = A0;
 constexpr int PIN_SALIDA = 5;
-constexpr int PIN_DISPLAY_SDA = 6;
-constexpr int PIN_DISPLAY_SCL = 7;
 // Constantes de promedios
 constexpr int MUESTRAS_PROMEDIO_BATERIA = 100;
 constexpr int TIEMPO_ENTRE_MUESTRAS_BATERIA = 10;
@@ -14,7 +15,7 @@ constexpr int MUESTRAS_PROMEDIO_SALIDA = 100;
 constexpr int TIEMPO_ENTRE_SALIDAS = 10;
 // Constantes de tiempo
 constexpr int TIEMPO_ENTRE_MSG_SERIAL = 1000;
-constexpr int TIEMPO_ENTRE_ACT_DISPLAY = 250;
+constexpr int TIEMPO_ENTRE_ACT_DISPLAY = 100;
 
 template<typename T, int SIZE, typename A>
 class Average {
@@ -42,6 +43,7 @@ public:
 
 Average<int, MUESTRAS_PROMEDIO_BATERIA, long long> prom_bateria;
 Average<double, MUESTRAS_PROMEDIO_SALIDA, double> prom_salida;
+LiquidCrystal_I2C lcd(0x27);
 
 auto siguiente_lectura_bateria = 0ul;
 auto siguiente_salida = 0ul;
@@ -52,10 +54,11 @@ void setup() {
   // Configurar modo de cada pin
   pinMode(PIN_BATERIA, INPUT);
   pinMode(PIN_SALIDA, OUTPUT);
-  pinMode(PIN_DISPLAY_SDA, OUTPUT);
-  pinMode(PIN_DISPLAY_SCL, OUTPUT);
-  // Inicializar interfaz serial
+  // Inicializar comunicaciones
   Serial.begin(9600);
+  lcd.begin(16, 2);
+
+  lcd.home();
 }
 
 void loop() {
@@ -111,7 +114,17 @@ void loop() {
   if (ahora >= siguiente_act_display) {
     siguiente_act_display += TIEMPO_ENTRE_ACT_DISPLAY;
 
-    // TODO: Actualizar display
+    lcd.clear();
+    
+    lcd.setCursor(0, 0);
+    lcd.print("Bat");
+    lcd.setCursor(0, 1);
+    lcd.print(bateria);
+
+    lcd.setCursor(6, 0);
+    lcd.print("Out");
+    lcd.setCursor(6, 1);
+    lcd.print(salida);
   }
 
 }
