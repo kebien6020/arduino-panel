@@ -15,7 +15,7 @@ constexpr int MUESTRAS_PROMEDIO_SALIDA = 100;
 constexpr int TIEMPO_ENTRE_SALIDAS = 10;
 // Constantes de tiempo
 constexpr int TIEMPO_ENTRE_MSG_SERIAL = 1000;
-constexpr int TIEMPO_ENTRE_ACT_DISPLAY = 100;
+constexpr int TIEMPO_ENTRE_ACT_DISPLAY = 500;
 
 template<typename T, int SIZE, typename A>
 class Average {
@@ -43,7 +43,7 @@ public:
 
 Average<int, MUESTRAS_PROMEDIO_BATERIA, long long> prom_bateria;
 Average<double, MUESTRAS_PROMEDIO_SALIDA, double> prom_salida;
-LiquidCrystal_I2C lcd(0x27);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 auto siguiente_lectura_bateria = 0ul;
 auto siguiente_salida = 0ul;
@@ -56,9 +56,10 @@ void setup() {
   pinMode(PIN_SALIDA, OUTPUT);
   // Inicializar comunicaciones
   Serial.begin(9600);
-  lcd.begin(16, 2);
+  lcd.init();
 
   lcd.home();
+  lcd.backlight();
 }
 
 void loop() {
