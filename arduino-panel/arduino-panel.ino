@@ -8,11 +8,13 @@
 // Pines
 constexpr int PIN_BATERIA = A0;
 constexpr int PIN_PANEL = A1;
+constexpr int PIN_AMP = A3;
 constexpr int PIN_SALIDA = 5;
 // Constantes de promedios
 constexpr int MUESTRAS_PROMEDIO_BATERIA = 100;
 constexpr int MUESTRAS_PROMEDIO_PANEL = 100;
-constexpr int TIEMPO_ENTRE_ENTRADAS = 10;
+constexpr int MUESTRAS_PROMEDIO_AMP = 100;
+constexpr int TIEMPO_ENTRE_ENTRADAS = 15;
 constexpr int MUESTRAS_PROMEDIO_SALIDA = 100;
 constexpr int TIEMPO_ENTRE_SALIDAS = 10;
 // Constantes de tiempo
@@ -44,7 +46,8 @@ public:
 };
 
 Average<int, MUESTRAS_PROMEDIO_BATERIA, long long> prom_bateria;
-Average<int, MUESTRAS_PROMEDIO_BATERIA, long long> prom_panel;
+Average<int, MUESTRAS_PROMEDIO_PANEL, long long> prom_panel;
+Average<int, MUESTRAS_PROMEDIO_AMP, long long> prom_amp;
 Average<double, MUESTRAS_PROMEDIO_SALIDA, double> prom_salida;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -56,6 +59,8 @@ auto siguiente_act_display = 0ul;
 void setup() {
   // Configurar modo de cada pin
   pinMode(PIN_BATERIA, INPUT);
+  pinMode(PIN_PANEL, INPUT);
+  pinMode(PIN_AMP, INPUT);
   pinMode(PIN_SALIDA, OUTPUT);
   // Inicializar comunicaciones
   Serial.begin(9600);
@@ -74,13 +79,17 @@ void loop() {
     
     prom_bateria.add_val(analogRead(PIN_BATERIA));
     prom_panel.add_val(analogRead(PIN_PANEL));
+    prom_amp.add_val(analogRead(PIN_AMP));
   }
 
   // Calculos
   auto lectura_bat = prom_bateria.get_val();
   auto lectura_panel = prom_panel.get_val();
+  auto lectura_amp = prom_amp.get_val();
   auto bateria = lectura_bat * 70.0 / 1023.0 - 7.0;
   auto panel = lectura_panel * 70.0 / 1023.0 - 7.0;
+  auto amp = lectura_amp * 3.0;
+  auto potency = panel * amp;
   constexpr auto x1 = 28.0, y1 = 1.0, x2 = 29.0, y2 = 0.0;
   constexpr auto m = (y2 - y1)/(x2 - x1);
   constexpr auto b = y2 - m * x2;
@@ -114,6 +123,12 @@ void loop() {
     Serial.print(" -- Panel: ");
     Serial.print(panel);
 
+    Serial.print(" -- Amp: ");
+    Serial.print(amp);
+
+    Serial.print(" -- Pot: ");
+    Serial.print(potency);
+
     Serial.print(" -- Salida: ");
     Serial.print(salida);
 
@@ -124,22 +139,26 @@ void loop() {
   if (ahora >= siguiente_act_display) {
     siguiente_act_display += TIEMPO_ENTRE_ACT_DISPLAY;
 
-    lcd.clear();
-    
+    char buf_top[17];
+    char buf_bot[17];
+
+    char bat_str[6];
+    char pan_str[6];
+    char pot_str[6];
+    char sal_str[6];
+
+    dtostrf(bateria, 5, 2, bat_str);
+    dtostrf(panel, 5, 2, pan_str);
+    dtostrf(potency, 4, 0, pot_str);
+    dtostrf(salida, 4, 2, sal_str);
+
+    sprintf(buf_top, "B:%s W:%s", bat_str, pot_str);
+    sprintf(buf_bot, "P:%s O:%s", pan_str, sal_str);
+
     lcd.setCursor(0, 0);
-    lcd.print("Bat");
+    lcd.print(buf_top);
     lcd.setCursor(0, 1);
-    lcd.print(bateria);
-
-    lcd.setCursor(6, 0);
-    lcd.print("Pan");
-    lcd.setCursor(6, 1);
-    lcd.print(panel);
-
-    lcd.setCursor(12, 0);
-    lcd.print("Out");
-    lcd.setCursor(12, 1);
-    lcd.print(salida);
+    lcd.print(buf_bot);
   }
 
 }
