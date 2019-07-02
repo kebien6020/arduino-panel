@@ -7,10 +7,12 @@
 
 // Pines
 constexpr int PIN_BATERIA = A0;
+constexpr int PIN_PANEL = A1;
 constexpr int PIN_SALIDA = 5;
 // Constantes de promedios
 constexpr int MUESTRAS_PROMEDIO_BATERIA = 100;
-constexpr int TIEMPO_ENTRE_MUESTRAS_BATERIA = 10;
+constexpr int MUESTRAS_PROMEDIO_PANEL = 100;
+constexpr int TIEMPO_ENTRE_ENTRADAS = 10;
 constexpr int MUESTRAS_PROMEDIO_SALIDA = 100;
 constexpr int TIEMPO_ENTRE_SALIDAS = 10;
 // Constantes de tiempo
@@ -42,10 +44,11 @@ public:
 };
 
 Average<int, MUESTRAS_PROMEDIO_BATERIA, long long> prom_bateria;
+Average<int, MUESTRAS_PROMEDIO_BATERIA, long long> prom_panel;
 Average<double, MUESTRAS_PROMEDIO_SALIDA, double> prom_salida;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-auto siguiente_lectura_bateria = 0ul;
+auto siguiente_lectura = 0ul;
 auto siguiente_salida = 0ul;
 auto siguiente_msg_serial = 0ul;
 auto siguiente_act_display = 0ul;
@@ -66,15 +69,18 @@ void loop() {
   auto ahora = millis();
 
   // Recolectar datos de entrada
-  if (ahora >= siguiente_lectura_bateria) {
-    siguiente_lectura_bateria += TIEMPO_ENTRE_MUESTRAS_BATERIA;
+  if (ahora >= siguiente_lectura) {
+    siguiente_lectura += TIEMPO_ENTRE_ENTRADAS;
     
     prom_bateria.add_val(analogRead(PIN_BATERIA));
+    prom_panel.add_val(analogRead(PIN_PANEL));
   }
 
   // Calculos
   auto lectura_bat = prom_bateria.get_val();
+  auto lectura_panel = prom_panel.get_val();
   auto bateria = lectura_bat * 70.0 / 1023.0 - 7.0;
+  auto panel = lectura_panel * 70.0 / 1023.0 - 7.0;
   constexpr auto x1 = 28.0, y1 = 1.0, x2 = 29.0, y2 = 0.0;
   constexpr auto m = (y2 - y1)/(x2 - x1);
   constexpr auto b = y2 - m * x2;
@@ -105,6 +111,9 @@ void loop() {
     Serial.print("Bateria: ");
     Serial.print(bateria);
 
+    Serial.print(" -- Panel: ");
+    Serial.print(panel);
+
     Serial.print(" -- Salida: ");
     Serial.print(salida);
 
@@ -123,8 +132,13 @@ void loop() {
     lcd.print(bateria);
 
     lcd.setCursor(6, 0);
-    lcd.print("Out");
+    lcd.print("Pan");
     lcd.setCursor(6, 1);
+    lcd.print(panel);
+
+    lcd.setCursor(12, 0);
+    lcd.print("Out");
+    lcd.setCursor(12, 1);
     lcd.print(salida);
   }
 
